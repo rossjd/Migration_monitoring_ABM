@@ -1,0 +1,1160 @@
+<?xml version="1.0"?>
+
+<!-- Evolver Model Specification File -->
+<RePastEvolver:EvolverModelSpec xmlns:RePastEvolver="http://src.uchicago.edu/simbuilder/">
+<RePastEvolver:EvolverProject  ProjectDirectory="C:\ESRIPress\AgentAnalyst" PackageName="default_package" ProjectName="Environment" ClassPath="" consoleErr="false" consoleOut="true" >
+<Description>
+<![CDATA[
+
+]]>
+</Description>
+<RePastEvolver:EvolverModel  ModelName="GridModel" DisplayName="Migration Model" Class="class uchicago.src.simbuilder.beans.gis.DefaultGISModelProducer" gisPackage="ArcGIS" >
+  <RePastEvolver:action name="initAgents" sigReadOnly="true" retType="void" imports="uchicago.src.sim.util.Random cern.jet.random.engine.MersenneTwister java.io.FileWriter java.io.BufferedWriter java.io.File java.io.IOException anl.repast.gis.data java.util.Iterator java.util.Collection java.util.AbstractMap" paramNames="">
+<![CDATA[
+def initAgents():
+  if self.initiating == true:
+    Random.createUniform()
+    Random.createNormal(0, 1)
+    Ma = self.migAlpha
+    Ml = self.migLambda
+    Random.createGamma(Ma, Ml)
+    self.birdHM = LinkedHashMap()
+    self.PtGridHM = LinkedHashMap()
+    self.setGridpoints(ArrayList())
+    points = self.getGridpoints()
+    points.add(Integer(-999))  ## 0:Grid point ID
+    points.add("String")       ## 1:Human use
+    points.add(Double(0.0))    ## 2:RelDistWaterWts
+    points.add(Integer(-999))  ## 7 3:Elevation
+    points.add(Integer(-999))  ## 8 4:Human disturbance
+    points.add(Integer(-999))  ## 9 5:Coast Direction
+    points.add(Integer(-999))  ## 10 6:Coast Distance
+    points.add(Integer(-999))  ## 11 7:River Direction
+    points.add(Integer(-999))  ## 12 8:River Distance
+    points.add(Integer(-999))  ## 13 9:Lake Direction
+    points.add(Integer(-999))  ## 14 10:Lake Distance
+    points.add(Integer(0))     ## 3 11:Local occupants
+    points.add(Integer(0))    ## 4 12:Local diseased birds
+    points.add(Double(0.0))    ## 5 13:Local disease mean virulence (if present)
+    points.add(Double(0.0))    ## 6 14:Population disease virulence standard deviation
+    points.add(Integer(0))     ## 15:NEXT DAY Local occupants
+    points.add(Integer(0))     ## 16:NEXT DAY Local diseased birds
+    points.add(Double(0.0))    ## 17:NEXT DAY Local disease mean virulence (if present)
+    points.add(Double(0.0))    ## 18:NEXT DAY Population disease virulence standard deviation
+    points.add(Integer(0))     ## 19:Day of last change for this gridpoint
+
+    print points
+    self.setNghPoints(ArrayList())
+    ngh = self.getNghPoints()
+    ngh.add(Double(0.0)) ## Neighborhood grid pt #0 (lower left)
+    ngh.add(Double(0.0)) ## Neighborhood grid pt #1
+    ngh.add(Double(0.0)) ## Neighborhood grid pt #2
+    ngh.add(Double(0.0)) ## Neighborhood grid pt #3
+    ngh.add(Double(0.0)) ## Neighborhood grid pt #4
+    ngh.add(Double(0.0)) ## Neighborhood grid pt #5
+    ngh.add(Double(0.0)) ## Neighborhood grid pt #6
+    ngh.add(Double(0.0)) ## Neighborhood grid pt #7
+    ngh.add(Double(0.0)) ## Neighborhood grid pt #8
+    ngh.add(Double(0.0)) ## Neighborhood grid pt #9
+    ngh.add(Double(0.0)) ## Neighborhood grid pt #10
+    ngh.add(Double(0.0)) ## Neighborhood grid pt #11
+    ngh.add(Double(0.0)) ## Neighborhood grid pt #12
+    ngh.add(Double(0.0)) ## Neighborhood grid pt #13
+    ngh.add(Double(0.0)) ## Neighborhood grid pt #14
+    ngh.add(Double(0.0)) ## Neighborhood grid pt #15
+    ngh.add(Double(0.0)) ## Neighborhood grid pt #16
+    ngh.add(Double(0.0)) ## Neighborhood grid pt #17
+    ngh.add(Double(0.0)) ## Neighborhood grid pt #18
+    ngh.add(Double(0.0)) ## Neighborhood grid pt #19
+    ngh.add(Double(0.0)) ## Neighborhood grid pt #20
+    ngh.add(Double(0.0)) ## Neighborhood grid pt #21
+    ngh.add(Double(0.0)) ## Neighborhood grid pt #22
+    ngh.add(Double(0.0)) ## Neighborhood grid pt #23
+    ngh.add(Double(0.0)) ## Neighborhood grid pt #24  ## assumes 5x5 grid
+
+    self.populateGrid(points)
+    print "Grid HM populated"
+    self.setBirdfile(ArrayList())
+    curBird = self.getBirdfile()
+    curBird.add(Integer(-999))  ##0:Bird ID
+    curBird.add(Integer(0)) ### 1:Disease status: 1 = diseased, 0 = not diseased
+    curBird.add(Double(0.0))  ### 2:Disease virulence (1 = guaranteed transmission, 0 = no chance of transmission)
+    curBird.add(Double(0.0))  ### 3:Susceptibility (0.0 = not susceptible, 1.0 = 100% susceptible)
+    curBird.add(Boolean(true)) ### 4:Agent alive?
+    curBird.add(Boolean(true))  ### 5:Agent migrating?
+    curBird.add(Integer(0)) ### 6:grid position for each day
+
+    self.populateBirds(curBird)
+    print "Bird HM populated"
+    tc = 0
+    #self.setStatArray(ArrayList())
+    #stats = self.getStatArray()
+    #stats.add("Number Diseased,Number communicable,Number dead")  ## 0:Header
+    #stats.add(Integer(0))  ## Day
+    #stats.add(Integer(0))  ## Diseased
+    #stats.add(Integer(0))  ## Communicable
+    #stats.add(Integer(0))  ## Dead
+    self.endDay(tc)
+  self.initiating = false
+]]>
+</RePastEvolver:action>
+
+  <RePastEvolver:action name="updateDisplay" sigReadOnly="true" retType="void" imports="" paramNames="">
+<![CDATA[
+def updateDisplay():
+  print "Updating display"
+  self.updateGISDisplay()
+]]>
+</RePastEvolver:action>
+
+  <RePastEvolver:action name="writeAgents" sigReadOnly="true" retType="void" imports="" paramNames="">
+<![CDATA[
+def writeAgents():
+  print "Writing agents"
+  filename = ("C:\ABMs\MigrMonit\Birds.shp")  ### Need to create copy of orignal Birds.shp file if the file is to be overwritten in process ####
+  
+  self.writeAgents(self.agents, filename)
+]]>
+</RePastEvolver:action>
+
+  <RePastEvolver:action name="step" sigReadOnly="false" retType="void" imports="" paramNames="">
+<![CDATA[
+def step():
+  tc = int(self.getTickCount())
+  ### stop at Day 100
+  if tc > 100:
+    self.stop()
+    print "Outtatime"
+  elif self.NumDiseased == 0:
+    print "No more diseased"
+    self.stop()
+  elif tc >= 1:
+    print "Updating grid"
+    self.updateGrid(tc)
+    print "Beginning moves for day: "+tc
+    bd = 0
+    for BIRDS as waterfowl in self.agents:
+      BIRDS.iterate(bd, tc)
+      if bd%100000 == 0:
+        print "Bird "+bd
+        print "Number diseased = "+self.NumDiseased
+        print "Number communicable = "+self.NumComm
+        print "Number dead = "+self.NumDead
+      bd = bd+1
+    self.endDay(tc)
+  else:
+    return
+]]>
+</RePastEvolver:action>
+
+  <RePastEvolver:action name="endDay" sigReadOnly="false" retType="void" imports="" paramNames="">
+<![CDATA[
+def endDay(int tc):
+  ### To log the overall grid in order to track bird density and disease metrics ###
+  if tc%2 == 0:
+    file = File(self.outputDir+self.OptimDensity+"."+self.DensityWeight+"."+self.DensWtSlope+"_init"+self.initDiseasePrev+"_mig"+self.FreqMig+"."+self.migAlpha+"."+self.migLambda+"."+self.MaxDist+"."+self.NormalMean+"."+self.NormalSD+"_Vr"+self.communicableDay+"."+self.MaxVirulence+"."+self.VirChgMean+"."+self.VirChgSD+"ngh"+self.NghdSize+"atr"+self.AttrProb+"Grid"+tc+".csv")
+    fw = FileWriter(file.getAbsoluteFile(),true)
+    bw = BufferedWriter(fw)
+    for GRID as grid in self.samplingGrid:
+      PtID = GRID.getPointID()
+      obj = self.PtGridHM.get(str(PtID))
+      list = ArrayList()
+      list = (ArrayList)obj
+      bw.newLine()
+      bw.write(str(list))
+      #self.pause()
+    bw.close()
+    print "Grid printed for day: "+tc
+  ### To log the overall grid in order to track bird density and disease metrics ###
+  file2 = File(self.outputDir+self.OptimDensity+"."+self.DensityWeight+"."+self.DensWtSlope+"_init"+self.initDiseasePrev+"_mig"+self.FreqMig+"."+self.migAlpha+"."+self.migLambda+"."+self.MaxDist+"."+self.NormalMean+"."+self.NormalSD+"_Vr"+self.communicableDay+"."+self.MaxVirulence+"."+self.VirChgMean+"."+self.VirChgSD+"ngh"+self.NghdSize+"atr"+self.AttrProb+"Birds"+tc+".csv")
+  fw2 = FileWriter(file2.getAbsoluteFile(),true)
+  bw2 = BufferedWriter(fw2)
+  i = 0
+  for BIRDS as waterfowl in self.agents:
+    BirdID = i
+    obj2 = self.BirdHM.get(str(BirdID))
+    list2 = ArrayList()
+    list2 = (ArrayList)obj2
+    bw2.newLine()
+    bw2.write(str(list2))
+    #self.pause()
+    i = i+1
+  bw2.close()
+  print "Birds printed for day: "+tc
+  
+  file3 = File(self.outputDir+"RepastOutput"+self.OptimDensity+"."+self.DensityWeight+"."+self.DensWtSlope+"_init"+self.initDiseasePrev+"_migr"+self.FreqMig+"."+self.migAlpha+"."+self.migLambda+"."+self.MaxDist+"."+self.NormalMean+"."+self.NormalSD+"_Vir"+self.communicableDay+"."+self.MaxVirulence+"."+self.VirChgMean+"."+self.VirChgSD+".txt")
+  fw3 = FileWriter(file3.getAbsoluteFile(),true)
+  bw3 = BufferedWriter(fw3)
+  bw3.newLine()
+  #stats = self.getStatArray()
+  #stats.set(1,str(tc))  ## Day
+  #stats.set(2,str(self.NumDiseased))  ## Diseased
+  #stats.set(3,str(self.NumComm))  ## Communicable
+  #stats.set(4,str(self.NumDead))  ## Dead
+  #bw3.write(str(stats))
+  bw3.write("Day:"+tc+",NumDiseased:"+self.NumDiseased+",NumComm:"+self.NumComm+",NumDead:"+self.NumDead)
+  bw3.close()
+  print "Stats written for day: "+tc
+]]>
+</RePastEvolver:action>
+
+  <RePastEvolver:action name="populateGrid" sigReadOnly="false" retType="void" imports="" paramNames="">
+<![CDATA[
+def populateGrid(ArrayList points):
+  if self.initiating == true:
+    for GRID as grid in self.samplingGrid:
+      GRID.pointStats(points)
+]]>
+</RePastEvolver:action>
+
+  <RePastEvolver:action name="lookupGrid" sigReadOnly="false" retType="void" imports="" paramNames="">
+<![CDATA[
+def lookupGrid(int PntID):
+  # To make sure point is close enough to anchor point
+  HashMap = self.getPtGridHM()
+  if HashMap.containsKey(str(PntID)) == true:
+    self.ValidMove = true
+    #print "True ngh"
+  else:
+    self.ValidMove = false
+    #print "False ngh"
+  #print "validity looked up"
+]]>
+</RePastEvolver:action>
+
+  <RePastEvolver:action name="populateBirds" sigReadOnly="false" retType="void" imports="" paramNames="">
+<![CDATA[
+def populateBirds(ArrayList curBird):
+  if self.initiating == true:
+    bd = 0
+    # Pick the population that contains the disease start
+    selPop = (Random.uniform.nextIntFromTo(1,10))*100000
+    print "Populating BIRDS"
+    for BIRDS as waterfowl in self.agents:
+      BIRDS.initBird(curBird, bd, selPop)
+      bd = bd+1
+]]>
+</RePastEvolver:action>
+
+  <RePastEvolver:action name="updateGrid" sigReadOnly="false" retType="void" imports="" paramNames="">
+<![CDATA[
+def updateGrid(int tc):
+  for GRID as grid in self.samplingGrid:
+    GRID.update(tc)
+]]>
+</RePastEvolver:action>
+
+
+<RePastEvolver:parameter name="DiffRasterDir" type="java.lang.String" defaultValue="&quot;C:\ESRIPress\AgentAnalyst\RossSims\VegLayers\28dayDiff&quot;" probe="false" accessible="true" />
+<RePastEvolver:parameter name="migAlpha" type="float" defaultValue="6" probe="true" accessible="true" />
+<RePastEvolver:parameter name="migLambda" type="float" defaultValue="0.015" probe="true" accessible="true" />
+<RePastEvolver:parameter name="outputDir" type="java.lang.String" defaultValue="&quot;C:\ABMruns\0&quot;" probe="false" accessible="true" />
+<RePastEvolver:parameter name="FreqMig" type="int" defaultValue="10" probe="true" accessible="true" />
+<RePastEvolver:parameter name="birdHM" type="java.util.LinkedHashMap" defaultValue="" probe="false" accessible="true" />
+<RePastEvolver:parameter name="NghPoints" type="java.util.ArrayList" defaultValue="" probe="false" accessible="true" />
+<RePastEvolver:parameter name="Gridpoints" type="java.util.ArrayList" defaultValue="" probe="false" accessible="true" />
+<RePastEvolver:parameter name="PtGridHM" type="java.util.LinkedHashMap" defaultValue="" probe="false" accessible="true" />
+<RePastEvolver:parameter name="totWeight" type="double" defaultValue="" probe="false" accessible="true" />
+<RePastEvolver:parameter name="NghHM" type="java.util.LinkedHashMap" defaultValue="" probe="false" accessible="true" />
+<RePastEvolver:parameter name="RasterDir" type="java.lang.String" defaultValue="&quot;C:\ESRIPress\AgentAnalyst\RossSims\VegLayers\EVI&quot;" probe="false" accessible="true" />
+<RePastEvolver:parameter name="UseElev" type="boolean" defaultValue="true" probe="true" accessible="true" />
+<RePastEvolver:parameter name="UseCoast" type="boolean" defaultValue="true" probe="true" accessible="true" />
+<RePastEvolver:parameter name="UseRiver" type="boolean" defaultValue="true" probe="true" accessible="true" />
+<RePastEvolver:parameter name="UseLake" type="boolean" defaultValue="true" probe="true" accessible="true" />
+<RePastEvolver:parameter name="UseDisturb" type="boolean" defaultValue="true" probe="true" accessible="true" />
+<RePastEvolver:parameter name="UseHumanUse" type="boolean" defaultValue="true" probe="true" accessible="true" />
+<RePastEvolver:parameter name="ValidMove" type="boolean" defaultValue="" probe="false" accessible="true" />
+<RePastEvolver:parameter name="MaxDist" type="int" defaultValue="1200" probe="true" accessible="true" />
+<RePastEvolver:parameter name="Birdfile" type="java.util.ArrayList" defaultValue="" probe="false" accessible="true" />
+<RePastEvolver:parameter name="initiating" type="boolean" defaultValue="true" probe="false" accessible="true" />
+<RePastEvolver:parameter name="NormalSD" type="double" defaultValue="55" probe="true" accessible="true" />
+<RePastEvolver:parameter name="NormalMean" type="double" defaultValue="170" probe="true" accessible="true" />
+<RePastEvolver:parameter name="OptimDensity" type="int" defaultValue="1500" probe="true" accessible="true" />
+<RePastEvolver:parameter name="communicableDay" type="int" defaultValue="4" probe="true" accessible="true" />
+<RePastEvolver:parameter name="NumDead" type="int" defaultValue="0" probe="false" accessible="true" />
+<RePastEvolver:parameter name="NumDiseased" type="int" defaultValue="0" probe="false" accessible="true" />
+<RePastEvolver:parameter name="MaxVirulence" type="double" defaultValue="1.0" probe="true" accessible="true" />
+<RePastEvolver:parameter name="DensityWeight" type="double" defaultValue="2.0" probe="true" accessible="true" />
+<RePastEvolver:parameter name="DensWtSlope" type="int" defaultValue="2" probe="true" accessible="true" />
+<RePastEvolver:parameter name="VirChgMean" type="double" defaultValue="1" probe="true" accessible="true" />
+<RePastEvolver:parameter name="VirChgSD" type="double" defaultValue="0.1" probe="true" accessible="true" />
+<RePastEvolver:parameter name="initDiseasePrev" type="double" defaultValue="0.001" probe="true" accessible="true" />
+<RePastEvolver:parameter name="numComm" type="int" defaultValue="0" probe="false" accessible="true" />
+<RePastEvolver:parameter name="NghdSize" type="int" defaultValue="2" probe="true" accessible="true" />
+<RePastEvolver:parameter name="AttrProb" type="int" defaultValue="-1" probe="true" accessible="true" />
+
+
+<RePastEvolver:schedule order="0" />
+<RePastEvolver:schedule_item action="step" tick="1.0" type="1" last="false" target="GridModel" id="0"/>
+
+<RePastEvolver:EvolverBean type="Compileable" class="class uchicago.src.simbuilder.beans.gis.VectorAgentProducer" name="waterfowl" groupName="agents">
+<VectorDataSource shapefile="C:\ABMs\MigrMonit\Birds.shp" displayField="FID_" gisPackage="ArcGIS">
+<VectorDataSourceDisplayValue field="default value" color="-65536" isDefault="true" thickness="1" />
+</VectorDataSource>
+
+  <RePastEvolver:action name="step" sigReadOnly="true" retType="void" imports="" paramNames="">
+<![CDATA[
+def step():
+]]>
+</RePastEvolver:action>
+
+  <RePastEvolver:action name="propMove" sigReadOnly="false" retType="void" imports="" paramNames="">
+<![CDATA[
+def propMove(int dist, int bearing, int k, ArrayList curBird, int bd):
+  point = self.the_geom.coordinate
+  aRad = Math.toRadians(bearing)
+  newY = point.y + dist*(Math.cos(aRad))
+  newX = point.x + dist*(Math.sin(aRad))
+  
+  # Need to round postition to nearest 10km point on grid###
+  RoundY = int(Math.round(newY/10000)*10000)
+  RoundX = int(Math.round(newX/10000)*10000)
+  
+  #Ensure that possible landing points are in arena of study
+  if k > 99:
+      Dir = 0
+      Dis = 0
+      RoundY = int(point.y)
+      RoundX = int(point.x)
+      #print ">99: staying put"
+      self.relocate(Dir, Dis, RoundY, RoundX, curBird, bd)  
+  elif RoundY > 4910000:
+    k = k+1
+    self.dirDist(k, curBird, bd)
+  elif RoundY < -3920000:
+    k = k+1
+    self.dirDist(k, curBird, bd)
+  elif RoundX > 4460000:
+    k = k+1
+    self.dirDist(k, curBird, bd)
+  elif RoundX < -5760000:
+    k = k+1
+    self.dirDist(k, curBird, bd)
+  else:
+    # Calculate the corresponding point number based on coordinates
+    Row = (RoundY+3930000)/10000
+    Column = (RoundX+5770000)/10000
+    PtID = int((1023*Row)+(-1023+Column))
+    #print "potential move picked at "+PtID
+    ## Need to ensure that point is within 200km of land ###
+    PntID = PtID
+    self.model.lookupGrid(PntID)
+    ## Otherwise will need to reseek ##
+    if self.model.ValidMove == false:
+      #print "reconsidering move"
+      if k > 99:
+        Dir = 0
+        Dis = 0
+        #print "resetting search"
+        self.relocate(Dir, Dis, RoundY, RoundX, curBird, bd)
+      else:
+        k = k+1
+        self.dirDist(k, curBird, bd)
+    else:
+      #print "good to move"
+      self.Avoidance(PtID, RoundY, RoundX, curBird, bd)
+]]>
+</RePastEvolver:action>
+
+  <RePastEvolver:action name="dirDist" sigReadOnly="false" retType="void" imports="" paramNames="">
+<![CDATA[
+def dirDist(int k, ArrayList curBird, int bd):
+  #bearing = Random.uniform.nextIntFromTo(0, 359)
+  bearing = int(((Random.normal.nextDouble())*self.model.NormalSD)+self.model.NormalMean)
+
+  #need to randomly select migration distance from gamma distribution
+  dist = int(1000*Random.gamma.nextDouble())
+  maxDist = 1000*self.model.MaxDist
+  if dist > maxDist:
+    dist = int(maxDist-(dist+-maxDist))
+    #print "Truncated distance:"+int(dist)
+  #print "Distance and direction selected"
+  self.propMove(dist, bearing, k, curBird, bd)
+]]>
+</RePastEvolver:action>
+
+  <RePastEvolver:action name="Avoidance" sigReadOnly="false" retType="void" imports="" paramNames="">
+<![CDATA[
+def Avoidance(int PtID, int RoundY, int RoundX, ArrayList curBird, int bd):
+  point = self.model.PtGridHM.get(str(PtID))
+  pointList = ArrayList()
+  pointList = (ArrayList)point
+  ########## Elevation avoidance #############
+  if self.model.UseElev == true:
+    Elevation = int(str(pointList.get(3)))
+    eCM = self.ElevCurvePt
+    ElevAvoid = (1.0025 / (1 + Math.exp(-0.75 * ((double(Elevation) - eCM)/1000))))
+    #eCM is mean elevation to incite avoidance
+  else:
+    ElevAvoid = 0.0
+  #print "Elevation avoid = "+ElevAvoid
+    
+  ######### Human disturbance avoidance ############
+  if self.model.UseDisturb == true:
+    Disturb = int(str(pointList.get(4)))
+    dCM = self.DistrbCurvePt
+    DistrbAvoid = (1.0025 / (1 + Math.exp(-0.15 * (double(Disturb) - dCM))))
+    #eCM is mean/midpoint level of disturbance to incite avoidance
+  else:
+    DistrbAvoid = 0.0
+  #print "Disturb avoid = "+DistrbAvoid
+  
+  ########### Biome Types Avoidance #############
+  if self.model.UseHumanUse == true:
+    Use = int(str(pointList.get(1)))
+    if Use < 11:
+      UseAvoid = 0.0
+    elif Use < 27:
+      UseAvoid = self.ResAvoid
+    elif Use < 36:
+      UseAvoid = self.CroplandAvoid
+    elif Use < 44:
+      UseAvoid = self.RangeAvoid
+    elif Use < 63:
+      UseAvoid = self.ForestAvoid
+    elif Use == 63:
+      UseAvoid = self.BarrenAvoid
+    else:
+      UseAvoid = self.OceanAvoid
+  else:
+    UseAvoid = 0.0
+  #print "UseAvoid = "+UseAvoid
+    
+  #maxAvoid = Math.max(ElevAvoid,Math.max(DistrbAvoid,UseAvoid))
+  
+  E_D_Avoid = ((1-ElevAvoid)*DistrbAvoid)+ElevAvoid
+  #print "Elev/Dist avoid = "+E_D_Avoid
+  totAvoid = double(((1-E_D_Avoid)*UseAvoid)+E_D_Avoid)
+  #print "totAvoid = "+totAvoid
+  randA = Random.uniform.nextDoubleFromTo(0.0, 1.0)
+  if randA <= totAvoid:
+    self.deflect(pointList, RoundY, RoundX, curBird, bd)
+  else:
+    self.Attraction(pointList, RoundY, RoundX, curBird, bd, PtID)
+]]>
+</RePastEvolver:action>
+
+  <RePastEvolver:action name="Attraction" sigReadOnly="false" retType="void" imports="" paramNames="">
+<![CDATA[
+def Attraction(ArrayList pointList, int RoundY, int RoundX, ArrayList curBird, int bd, int PtID):
+  randA = Random.uniform.nextIntFromTo(0,100)
+  if randA <= self.model.AttrProb:  ## % probability to explore through attraction; -1 if no chance
+    
+    ########### Water type attraction ###########
+    CoDir = int(str(pointList.get(5)))
+    CoDis = int(str(pointList.get(6)))
+    CoDisAttr = 1-(1.0025 / (1 + Math.exp(-0.05 * ((double(CoDis) - 125000)/1000)))) ### 125km distance is furthest distance of draw(?)
+    CoastalDraw = self.CoastAttraction*CoDisAttr
+    #print "CoastalDraw = "+CoastalDraw
+  
+    RiDir = int(str(pointList.get(7)))
+    RiDis = int(str(pointList.get(8)))
+    RiDisAttr = 1-(1.0025 / (1 + Math.exp(-0.2 * ((double(RiDis) - 40000)/1000)))) ### 40km distance is furthest distance of draw(?)
+    RiverDraw = self.RiverAttraction*RiDisAttr
+    #print "RiverDraw = "+RiverDraw
+
+    LaDir = int(str(pointList.get(9)))
+    LaDis = int(str(pointList.get(10)))
+    LaDisAttr = 1-(1.0025 / (1 + Math.exp(-0.1 * ((double(LaDis) - 60000)/1000)))) ### 60km distance is furthest distance of draw(?)
+    LakeDraw = self.LakeAttraction*LaDisAttr
+    #print "LakeDraw = "+LakeDraw
+    
+    #### Calculate proportional draw of each water type ####
+    TotalDraw = CoastalDraw + RiverDraw + LakeDraw
+    MaxDraw = Math.max(CoastalDraw,Math.max(RiverDraw, LakeDraw))
+    PropCoastAttr = CoastalDraw/TotalDraw
+    PropRiverAttr = RiverDraw/TotalDraw
+    PropLakeAttr = 1 - PropCoastAttr - PropRiverAttr
+  
+    scaledCoAtt = PropCoastAttr*MaxDraw
+    scaledRiAtt = PropRiverAttr*MaxDraw
+    scRiverWindow = scaledRiAtt + scaledCoAtt
+    scaledLaAtt = PropLakeAttr*MaxDraw
+    scLakeWindow = scaledLaAtt + scRiverWindow
+    randScaled = Random.uniform.nextDoubleFromTo(0.0, 1.0)
+    if randScaled <= scaledCoAtt:
+      Dir = CoDir
+      Dis = CoDis
+    elif randScaled <= scRiverWindow:
+      Dir = RiDir
+      Dis = RiDis
+    elif randScaled <= scLakeWindow:
+      Dir = LaDir
+      Dis = LaDis
+    else:
+      Dir = 0
+      Dis = 0
+
+    rRad = Math.toRadians(Dir)
+    relY = int(Math.round((RoundY + Dis*(Math.cos(rRad)))/10000)*10000)
+    relX = int(Math.round((RoundX + Dis*(Math.sin(rRad)))/10000)*10000)
+    #print "Attraction relocation coordinates(x,y): "+relX+", "+relY
+    if relY > 4910000:
+      Dir = 0
+      Dis = 0
+    elif relY < -3920000:
+      Dir = 0
+      Dis = 0
+    elif relX > 4460000:
+      Dir = 0
+      Dis = 0
+    elif relX < -5760000:
+      Dir = 0
+      Dis = 0
+    self.relocate(Dir, Dis, RoundY, RoundX, curBird, bd)
+  else:
+    self.exploreNeighborhood(PtID, curBird, bd)
+]]>
+</RePastEvolver:action>
+
+  <RePastEvolver:action name="relocate" sigReadOnly="false" retType="void" imports="" paramNames="">
+<![CDATA[
+def relocate(int Dir, int Dis, int RoundY, int RoundX, ArrayList curBird, int bd):
+  bRad = Math.toRadians(Dir)
+  #print "bRad = "+bRad
+  relocY = RoundY + Dis*(Math.cos(bRad))
+  relocX = RoundX + Dis*(Math.sin(bRad))
+  #print relocY+", "+relocX
+  
+  # Again, round postition to nearest 10km point on grid #
+  reloRdY = int(Math.round(relocY/10000)*10000)
+  reloRdX = int(Math.round(relocX/10000)*10000)
+  #print "relocation to "+reloRdX+", "+reloRdY
+  # Calculate the corresponding point number based on coordinates
+  rRow = (reloRdY+3930000)/10000
+  rColumn = (reloRdX+5770000)/10000
+  PtID = int((1023*rRow)+(-1023+rColumn))
+  #print "New grid point: "+PtID
+  self.exploreNeighborhood(PtID, curBird, bd)
+]]>
+</RePastEvolver:action>
+
+  <RePastEvolver:action name="exploreNeighborhood" sigReadOnly="false" retType="void" imports="" paramNames="">
+<![CDATA[
+def exploreNeighborhood(int PtID, ArrayList curBird, int bd):
+  dHashMap = self.model.getPtGridHM()
+  neighborhood = self.model.getNghPoints()
+  q = 0
+  gridSz = self.model.NghdSize
+  y = -gridSz
+  rowSz = gridSz*2+1
+  maxSrch = Math.ceil(rowSz/2)
+  self.totWeight = 0.0
+  optDens = double(self.model.OptimDensity)
+  DensityWt = self.model.DensityWeight
+  DensWtSlope = double(self.model.DensWtSlope)
+  #print "Exploring neighborhood"
+  while y <= gridSz: 
+    x = -gridSz
+    while x <= gridSz:
+      #print "to the Xs"
+      if (PtID+(y*1023)) < 0:
+        relWeight = 0.0
+        #print "ngh pt below grid"
+      elif (PtID+(y*1023)) > 904332:
+        relWeight = 0.0
+        #print "ngh pt above grid"
+      elif ((PtID/1023.0- Math.floor((PtID+-1)/1023.0))*1023)+x <0:
+        relWeight = 0.0
+        print x+","+y+" ngh pt left of grid"
+      elif (Math.ceil(PtID/1023.0)-(PtID/1023.0))*1023 < x:
+        relWeight = 0.0
+        print "ngh pt right of grid"
+      elif Math.abs(x)+Math.abs(y) <= maxSrch:
+        #print "next x column" 
+        PntID = int(PtID+(y*1023)+x)
+        #print "Checking neighbor: "+PntID
+        #was self.model.lookupGrid(PntID)
+        if dHashMap.containsKey(str(PntID)) == true:
+          nghPtLine = dHashMap.get(str(PntID))
+          nghList = ArrayList()
+          nghList = (ArrayList)nghPtLine
+          occupants = int(str(nghList.get(15)))
+          occWt = 1/((Math.abs(occupants-optDens)/(optDens/DensWtSlope))+1)  ## DensWtSlope adjusts the slope steeper
+          #use = int(str(nghList.get(1)))    ######## COULD INCLUDE ALL OTHER METRICS HERE ##########
+          RelDistWaterWt = double(str(nghList.get(2)))
+          relWeight = (occWt*DensityWt)+RelDistWaterWt
+          self.totWeight = self.totWeight + relWeight
+        else:
+          relWeight = 0.0
+      else:
+        relWeight = 0.0
+        #print "no point"
+      neighborhood.set(int(q),str(relWeight))
+      q = q+1
+      x = x+1
+    y = y+1
+  #print "Ngbhd"
+  #print neighborhood
+  self.selectPoint(neighborhood, curBird, bd, PtID, gridSz, rowSz)
+]]>
+</RePastEvolver:action>
+
+  <RePastEvolver:action name="diseaseTrans" sigReadOnly="false" retType="void" imports="" paramNames="">
+<![CDATA[
+def diseaseTrans(int selPoint, ArrayList curBird, int bd):
+  tick = int(self.model.getTickCount())
+  selPt = self.model.PtGridHM.get(str(selPoint))
+  selList = ArrayList()
+  selList = (ArrayList)selPt
+  #print selList
+
+  lastChng = int(str(selList.get(19)))
+  if lastChng < tick:
+    occupants = int(str(selList.get(11)))
+    diseasedOccs = int(str(selList.get(12)))
+    meanVirulence = double(str(selList.get(13)))
+    popVirSD = double(str(selList.get(14)))
+    selList.set(19,Integer(tick))
+  else:
+    occupants = int(str(selList.get(15)))
+    diseasedOccs = int(str(selList.get(16)))
+    meanVirulence = double(str(selList.get(17)))
+    popVirSD = double(str(selList.get(18)))
+  
+  ## Grab metrics about the bird ##
+  curVir = double(str(curBird.get(2)))
+  disDay = int(str(curBird.get(1)))
+
+  newOccupancy = occupants + 1
+
+  if disDay <= 0-self.model.communicableDay:
+    newDO = diseasedOccs + 1
+    newMeanVir = ((meanVirulence*diseasedOccs)+curVir)/newDO
+    newVirSD = popVirSD
+  elif disDay >= self.model.communicableDay:
+    newDO = diseasedOccs + 1
+    newMeanVir = ((meanVirulence*diseasedOccs)+curVir)/newDO
+    SCcalc = ((newDO*(curVir/Math.abs(curVir)*Math.pow(curVir,2)+diseasedOccs*(Math.pow(popVirSD,2)+Math.pow(meanVirulence,2))))-(Math.pow(curVir+(diseasedOccs*meanVirulence),2)))/(Math.pow(double(newDO),2))
+    if SCcalc < 0:
+      SCcalc = 0.0
+    newVirSD = Math.sqrt(SCcalc)
+    #print "Bird"+bd+" newVirSD: "+newVirSD+" newPoint: "+selPoint
+  else:
+    newMeanVir = meanVirulence
+    newVirSD = popVirSD
+    newDO = diseasedOccs
+
+  selList.set(15,Integer(newOccupancy))
+  selList.set(16,Integer(newDO))
+  selList.set(17,Double(newMeanVir))
+  selList.set(18,Double(newVirSD))
+  
+  if tick == 0:
+    selList.set(11,Integer(newOccupancy))
+    selList.set(12,Integer(newDO))
+    selList.set(13,Double(newMeanVir))
+    selList.set(14,Double(newVirSD))
+    
+  self.model.PtGridHM.put(str(selPoint), ArrayList(selList))
+  self.model.birdHM.put(str(bd), ArrayList(curBird))
+]]>
+</RePastEvolver:action>
+
+  <RePastEvolver:action name="selectPoint" sigReadOnly="false" retType="void" imports="" paramNames="">
+<![CDATA[
+def selectPoint(ArrayList neighborhood, ArrayList curBird, int bd, int PtID, int gridSz, int rowSz):
+  totWt = self.totWeight
+  upper = int(Math.pow(rowSz,2)-1)
+  i = 0
+  cumulWtCell = 0.0
+  rand = Random.uniform.nextDoubleFromTo(0.0,1.0)
+  while i <= upper:
+    #print "checking each ngh pt"
+    cell = double(str(neighborhood.get(i)))
+    if cell == 0.0:
+      i=i+1
+    else:
+      weightCell = cell/totWt
+      cumulWtCell = cumulWtCell + weightCell
+      if rand < cumulWtCell:
+        #print rand+" smaller than "+cumulWtCell+" at "+i+" cell"
+        break
+      else:
+        i = i+1
+  if i > upper:
+    i = upper/2   ### Moves it back to the original posistion if rounding error cannot find bin
+    print "Rand:"+rand+" > cumulWt:"+cumulWtCell
+  #print "Point selected"
+  ## selPoint = chosen from among neighborhood points based on weighting
+  relPos = i/double(rowSz)
+  rowDiff = Math.floor(relPos)
+  #print "rowDiff = "+rowDiff
+  colDiff = ((relPos-rowDiff)*rowSz)-gridSz
+  selPoint = int(PtID + ((rowDiff-gridSz)*1023)+colDiff)
+  #print "selpoint = "+selPoint
+  
+  curBird.set(6,Integer(selPoint))  ### day's grid position
+
+  #print "bird array hashed"
+  ## Move the bird to the final point
+  
+  RowFloor = double(Math.floor((double(selPoint)+-1.0)/1023.0))
+  #print "RowFloor = "+RowFloor
+  finalY = (10000*RowFloor)+-3920000
+  finalX = (double(Math.round(10000*(((double(selPoint)/1023)-RowFloor)*1023))))+ -5770000
+  #print "Final x,y = "+finalX+", "+finalY
+  point = self.the_geom.coordinate
+  point.y = finalY
+  point.x = finalX
+  #print "agent moved"
+  self.diseaseTrans(selPoint, curBird, bd)
+]]>
+</RePastEvolver:action>
+
+  <RePastEvolver:action name="DiseaseExposure" sigReadOnly="false" retType="void" imports="" paramNames="">
+<![CDATA[
+def DiseaseExposure(ArrayList curBird, int bd, int CurrentPt, int tc):
+  curPt = self.model.PtGridHM.get(str(CurrentPt))
+  curList = ArrayList()
+  curList = (ArrayList)curPt
+  curOccs = int(str(curList.get(11)))
+  diseasedOccs = int(str(curList.get(12)))
+  meanVirulence = double(str(curList.get(13)))
+  popVirSD = double(str(curList.get(14)))
+  lastChange = int(str(curList.get(19)))
+  if lastChange < tc:
+    newCurOccs = curOccs
+    newDisOccs = diseasedOccs
+    newMVir = meanVirulence
+    newPopVSD = popVirSD
+    curList.set(16,Integer(diseasedOccs))
+    curList.set(17,Double(meanVirulence))
+    curList.set(18,Double(popVirSD))
+    curList.set(19,Integer(tc))
+  else:
+    newCurOccs = int(str(curList.get(15)))
+    newDisOccs = int(str(curList.get(16)))
+    newMVir = double(str(curList.get(17)))
+    newPopVSD = double(str(curList.get(18)))
+    #print "Disease prev ="+diseasePrev+" meanVirulence ="+meanVirulence
+  
+  InfectionDay = int(str(curBird.get(1)))
+  Suscept = double(str(curBird.get(3)))  ### SUSCEPTIBILITY [0.0 = LEAST; 1.0 = MOST] ###
+  newOcc = newCurOccs + -1  ## Because the agent is leaving (though it may "return" to same point)
+  curList.set(15,Integer(newOcc))
+
+  ## Determine if agent picks up or clears disease from current position.
+  ## Then remove the agent from the current point's metrics
+  virChange = ((Random.normal.nextDouble())*self.model.VirChgSD)+self.model.VirChgMean ## Normal distribution of virulance mutation
+  if virChange <0.1:
+    virChange = 0.1
+  if InfectionDay == 0:
+    newInfDay = 0
+    randExp = Random.uniform.nextDoubleFromTo(0.0,1.0)
+    diseaseProb = (double(diseasedOccs)/curOccs)*self.DailyContacts  ### EXPOSURE ###
+    if randExp < diseaseProb:
+      maxV = self.model.MaxVirulence
+      selVirulence = ((Random.normal.nextDouble())*popVirSD)+meanVirulence ## Normal distribution of virulance variance
+      if selVirulence > maxV:
+        selVirulence = (maxV - selVirulence)+maxV ## Distribution reflects back
+      elif selVirulence < 0.01:
+        selVirulence = (0.01 - selVirulence)+0.01
+      if selVirulence > (1-Suscept):
+        newInfDay = 1    ### INFECTION ###
+        newVirulence = virChange * selVirulence  ### Allow mutability of virulence ###
+        if newVirulence > maxV:
+          newVirulence = maxV
+        elif newVirulence < 0.01:
+          newVirulence = 0.01
+        curBird.set(2,Double(newVirulence))
+        #print "curOccs = "+curOccs
+        #print "diseasedOccs = "+diseasedOccs
+        #print "picked up disease"
+        self.model.NumDiseased = self.model.NumDiseased + 1
+    curBird.set(1,Integer(newInfDay))
+    #print "DiseaseExposure good"
+    self.model.PtGridHM.put(str(CurrentPt), ArrayList(curList))
+ 
+    self.mortality(newInfDay, curBird, bd)
+  else:
+    self.DiseaseClear(InfectionDay, newDisOccs, newMVir, newPopVSD, Suscept, virChange, curBird, curList, CurrentPt, bd)
+]]>
+</RePastEvolver:action>
+
+  <RePastEvolver:action name="initBird" sigReadOnly="false" retType="void" imports="" paramNames="">
+<![CDATA[
+def initBird(ArrayList curBird, int bd, int selPop):
+  curBird.set(0,Integer(bd))
+  point = self.the_geom.coordinate
+  bRoundY = int(Math.round(point.y/10000)*10000)
+  bRoundX = int(Math.round(point.x/10000)*10000)
+
+  # Calculate the corresponding beginning point number based on coordinates
+  bRow = (bRoundY+3930000)/10000
+  bColumn = (bRoundX+5770000)/10000
+  selPoint = int((1023*bRow)+(-1023+bColumn))
+  curBird.set(6,Integer(selPoint))
+  
+  # Provide susceptibility for each individual
+  #Susceptibility = ((Random.normal.nextDouble())*0.2)+0.5
+  Susceptibility = 1.0-((Random.gamma.nextDouble()/1000)+-0.2)
+  if Susceptibility >1.0:
+    Susceptibility = (1.0-Susceptibility)+1.0
+  if Susceptibility <0.1:
+    Susceptibility = (0.1-Susceptibility)+0.1
+  curBird.set(3,Double(Susceptibility))
+  
+  # Is bird in the infected original population?
+  if (Math.abs(bd - (selPop+-50000.5))) < 50000:
+    # Determine initial disease state
+    randDub = Random.uniform.nextDoubleFromTo(0.0,1.0)
+    if randDub < self.model.initDiseasePrev:
+      DayPick = int(Random.gamma.nextDouble()/100)
+      curBird.set(1,Integer(DayPick))
+      self.model.NumDiseased = self.model.NumDiseased + 1
+      if DayPick >= self.model.communicableDay:
+        self.model.NumComm = self.model.NumComm + 1
+      # Determine initial disease virulence (if infected)
+      virulence = ((Random.gamma.nextDouble()/1000)+-0.2)
+      if virulence > self.model.MaxVirulence:
+        virulence = double(self.model.MaxVirulence)
+      if virulence <0.1:
+        virulence = (0.1-virulence)+0.1
+      curBird.set(2,Double(virulence))
+      #print "Bird "+bd+" infected at virulence "+startVirulence
+    else:
+      curBird.set(1,Integer(0))
+      curBird.set(2,Double(0.0))
+      #print "Bird "+bd+"not infected"
+
+  self.diseaseTrans(selPoint, curBird, bd)
+]]>
+</RePastEvolver:action>
+
+  <RePastEvolver:action name="migrProb" sigReadOnly="false" retType="void" imports="" paramNames="">
+<![CDATA[
+def migrProb(ArrayList curBird, int bd):
+  migrating = Boolean.parseBoolean(str(curBird.get(5)))
+  migr = Random.uniform.nextIntFromTo(0, 100)
+  if migrating == false:
+    migr = 110 ### No chance of migration
+  
+  if migr < self.migrationProb:
+    k=0
+    #print "move"
+    self.dirDist(k, curBird, bd)
+  else:
+    pt = self.the_geom.coordinate
+    Dir = 0
+    Dis = 0   ### No migration, but agent will still explore neighborhood
+    RoundY = int(pt.y)
+    RoundX = int(pt.x)
+    #print "no migration"
+    self.relocate(Dir, Dis, RoundY, RoundX, curBird, bd)
+]]>
+</RePastEvolver:action>
+
+  <RePastEvolver:action name="iterate" sigReadOnly="false" retType="void" imports="" paramNames="">
+<![CDATA[
+def iterate(int bd, int tc):
+  curBd = self.model.birdHM.get(str(bd))
+  curBird = ArrayList()
+  curBird = (ArrayList)curBd
+  CurrentPt = int(str(curBird.get(6)))
+  alive = Boolean.parseBoolean(str(curBird.get(4)))
+  if alive == true:
+    migrating = Boolean.parseBoolean(str(curBird.get(5)))
+    if migrating == true:
+      contProb = 1 / (1 + Math.exp(-0.1 * ((CurrentPt/1023) - 260)))
+      stopRand = Random.uniform.nextDoubleFromTo(0.0, 1.0)
+      if stopRand > contProb:
+        curBird.set(5,Boolean(false)) ## Bird is no longer migrating
+    self.DiseaseExposure(curBird, bd, CurrentPt, tc)
+  else:
+    return
+]]>
+</RePastEvolver:action>
+
+  <RePastEvolver:action name="mortality" sigReadOnly="false" retType="void" imports="" paramNames="">
+<![CDATA[
+def mortality(int newInfDay, ArrayList curBird, int bd):
+  ## 50% of infected agents will have died by Day 7 of infection ##
+  ## allows for some daily probability (0.11%) of mortality without disease (i.e., natural death) ##
+  ## annual mortality for unifected birds would average 40% ##
+  MortProb = 1.0 / (1 + Math.exp(-0.9735845 * (newInfDay - 7))) 
+  mortPick = Random.uniform.nextDoubleFromTo(0.0,1.0)
+  if mortPick < MortProb:
+    curBird.set(4,Boolean(false))
+    selPoint = 298742 ## sending dead agents to Hawaii
+    #print "agent died and went to Hawaii on day "+newInfDay+" of infection"
+    self.model.NumDead = self.model.NumDead + 1
+    if newInfDay > 0:
+      self.model.NumDiseased = self.model.NumDiseased + -1
+      curBird.set(1,Integer(0 - newInfDay))  ## to indicate that the bird has died of the disease
+      if newInfDay >= self.model.communicableDay:
+        self.model.NumComm = self.model.NumComm + -1
+    self.diseaseTrans(selPoint, curBird, bd)
+  else:
+    self.migrProb(curBird, bd)
+]]>
+</RePastEvolver:action>
+
+  <RePastEvolver:action name="DiseaseClear" sigReadOnly="false" retType="void" imports="" paramNames="">
+<![CDATA[
+def DiseaseClear(int InfectionDay, int newDisOccs, double newMVir, double newPopVSD, double Suscept, double virChange, ArrayList curBird, ArrayList curList, int CurrentPt, int bd):
+  curVir = 0.0 - double(str(curBird.get(2)))  ### Negative because it is leaving population (maybe) ###
+  if InfectionDay >= self.model.communicableDay:
+    newDO = newDisOccs + -1 ## because a diseased agent is leaving
+    curList.set(16,Integer(newDO))
+    if newDO == 0:
+      newMV= 0.0 ## mean virulence reverts to zero when all diseased agents leave
+      newVirSD = 0.0
+    else:
+      if newDO == 1:
+        newVirSD = 0.0
+      else:
+        SCcalc = ((newDO*(curVir/Math.abs(curVir)*Math.pow(curVir,2)+newDisOccs*(Math.pow(newPopVSD,2)+Math.pow(newMVir,2))))-(Math.pow(curVir+(newDisOccs*newMVir),2)))/(Math.pow(double(newDO),2))
+        if SCcalc < 0:
+          SCcalc = 0.0
+        newVirSD = Math.sqrt(SCcalc)
+      newMV = ((newMVir*newDisOccs)+curVir)/newDO
+    curList.set(17,Double(newMV))
+    #print "Bird"+bd+" oldVirSD: "+popVirSD+" oldPoint: "+CurrentPt
+    curList.set(18,Double(newVirSD))
+      
+  #randClear = Random.uniform.nextDoubleFromTo(0.0,1.0)
+  #if randClear < (1+(curVir*virChange)):
+  if Suscept < (1+(curVir*virChange)):
+    newInfDay = 0   ## RECOVERY: bird is now disease-free - back to Day 0 ##
+    curBird.set(2,Double(0.0)) ## No virulence without disease
+    chgImmune = curVir*2
+    if chgImmune < -1.0:
+      chgImmune = -1.0
+    newSuscept = Suscept*(1+(chgImmune))  ## reduction in probability of re-infection is proportional to virulence of cleared strain
+    curBird.set(3,Double(newSuscept))
+    self.model.NumDiseased = self.model.NumDiseased + -1
+    if InfectionDay >= self.model.communicableDay:
+      self.model.NumComm = self.model.NumComm + -1
+  else:
+    newInfDay = InfectionDay + 1
+    if newInfDay == self.model.communicableDay:
+      self.model.NumComm = self.model.NumComm + 1
+  curBird.set(1,Integer(newInfDay))
+  self.model.PtGridHM.put(str(CurrentPt), ArrayList(curList))
+  self.mortality(newInfDay, curBird, bd)
+]]>
+</RePastEvolver:action>
+
+  <RePastEvolver:action name="deflect" sigReadOnly="false" retType="void" imports="" paramNames="">
+<![CDATA[
+def deflect(ArrayList pointList, int RoundY, int RoundX, ArrayList curBird, int bd):
+  ########### Water type attraction ###########
+  CoDir = int(str(pointList.get(5)))
+  CoDis = int(str(pointList.get(6)))
+  CoDisAttr = 1-(1.0025 / (1 + Math.exp(-0.05 * ((double(CoDis) - 125000)/1000)))) ### 125km distance is furthest distance of draw(?)
+  CoastalDraw = self.CoastAttraction*CoDisAttr
+  #print "CoastalDraw = "+CoastalDraw
+  
+  RiDir = int(str(pointList.get(7)))
+  RiDis = int(str(pointList.get(8)))
+  RiDisAttr = 1-(1.0025 / (1 + Math.exp(-0.2 * ((double(RiDis) - 40000)/1000)))) ### 40km distance is furthest distance of draw(?)
+  RiverDraw = self.RiverAttraction*RiDisAttr
+  #print "RiverDraw = "+RiverDraw
+
+  LaDir = int(str(pointList.get(9)))
+  LaDis = int(str(pointList.get(10)))
+  LaDisAttr = 1-(1.0025 / (1 + Math.exp(-0.1 * ((double(LaDis) - 60000)/1000)))) ### 60km distance is furthest distance of draw(?)
+  LakeDraw = self.LakeAttraction*LaDisAttr
+  #print "LakeDraw = "+LakeDraw
+    
+  #### Calculate proportional draw of each water type ####
+  TotalDraw = CoastalDraw + RiverDraw + LakeDraw
+  PropCoastAttr = CoastalDraw/TotalDraw
+  PropRiverAttr = RiverDraw/TotalDraw
+  PropLakeAttr = 1 - PropCoastAttr - PropRiverAttr
+  
+  ProbWindowCoast = PropCoastAttr
+  ProbWindowRiver = PropRiverAttr + PropCoastAttr
+  randWater = Random.uniform.nextDoubleFromTo(0.0, 1.0)
+  if randWater <= ProbWindowCoast:
+    Dir = CoDir
+    Dis = CoDis
+  elif randWater <= ProbWindowRiver:
+    Dir = RiDir
+    Dis = RiDis
+  else:
+    Dir = LaDir
+    Dis = LaDis
+
+  rRad = Math.toRadians(Dir)
+  relY = int(Math.round((RoundY + Dis*(Math.cos(rRad)))/10000)*10000)
+  relX = int(Math.round((RoundX + Dis*(Math.sin(rRad)))/10000)*10000)
+  #print "Attraction relocation coordinates(x,y): "+relX+", "+relY
+  if relY > 4910000:
+    Dir = 0
+    Dis = 0
+  elif relY < -3920000:
+    Dir = 0
+    Dis = 0
+  elif relX > 4460000:
+    Dir = 0
+    Dis = 0
+  elif relX < -5760000:
+    Dir = 0
+    Dis = 0
+  self.relocate(Dir, Dis, RoundY, RoundX, curBird, bd)
+]]>
+</RePastEvolver:action>
+
+
+<RePastEvolver:parameter name="PixelValue" type="int" defaultValue="" probe="false" accessible="true" />
+<RePastEvolver:parameter name="migrState" type="int" defaultValue="0" probe="false" accessible="true" />
+<RePastEvolver:parameter name="ValidMove" type="boolean" defaultValue="false" probe="false" accessible="true" />
+<RePastEvolver:parameter name="elevCurvePt" type="int" defaultValue="3000" probe="true" accessible="true" />
+<RePastEvolver:parameter name="DistrbCurvePt" type="int" defaultValue="30" probe="true" accessible="true" />
+<RePastEvolver:parameter name="CroplandAvoid" type="double" defaultValue="0.3" probe="true" accessible="true" />
+<RePastEvolver:parameter name="ResAvoid" type="double" defaultValue="0.9" probe="true" accessible="true" />
+<RePastEvolver:parameter name="RangeAvoid" type="double" defaultValue="0.5" probe="true" accessible="true" />
+<RePastEvolver:parameter name="ForestAvoid" type="double" defaultValue="0.15" probe="true" accessible="true" />
+<RePastEvolver:parameter name="OceanAvoid" type="double" defaultValue="0.9" probe="true" accessible="true" />
+<RePastEvolver:parameter name="BarrenAvoid" type="double" defaultValue="1.0" probe="true" accessible="true" />
+<RePastEvolver:parameter name="CoastAttraction" type="double" defaultValue="0.2" probe="true" accessible="true" />
+<RePastEvolver:parameter name="RiverAttraction" type="double" defaultValue="0.5" probe="true" accessible="true" />
+<RePastEvolver:parameter name="LakeAttraction" type="double" defaultValue="0.8" probe="true" accessible="true" />
+<RePastEvolver:parameter name="WaterDisWt" type="int" defaultValue="2" probe="true" accessible="true" />
+<RePastEvolver:parameter name="DisturbanceWt" type="int" defaultValue="1" probe="true" accessible="true" />
+<RePastEvolver:parameter name="totWeight" type="double" defaultValue="0.0" probe="false" accessible="true" />
+<RePastEvolver:parameter name="ClearanceRate" type="double" defaultValue="0.1" probe="true" accessible="true" />
+<RePastEvolver:parameter name="migrationProb" type="int" defaultValue="20" probe="true" accessible="true" />
+<RePastEvolver:parameter name="DailyContacts" type="int" defaultValue="2" probe="true" accessible="true" />
+
+
+</RePastEvolver:EvolverBean>
+
+<RePastEvolver:EvolverBean type="Compileable" class="class uchicago.src.simbuilder.beans.gis.VectorAgentProducer" name="grid" groupName="samplingGrid">
+<VectorDataSource shapefile="C:\ABMs\MigrMonit\SamplePointsClip.shp" displayField="Anthro_Bio" gisPackage="ArcGIS">
+<VectorDataSourceDisplayValue field="default value" color="-65536" isDefault="true" thickness="1" />
+</VectorDataSource>
+
+  <RePastEvolver:action name="step" sigReadOnly="true" retType="void" imports="" paramNames="">
+<![CDATA[
+def step():
+]]>
+</RePastEvolver:action>
+
+  <RePastEvolver:action name="pointStats" sigReadOnly="false" retType="void" imports="" paramNames="">
+<![CDATA[
+def pointStats(ArrayList points):
+  PointID = int(self.getPointID())
+  #points = self.model.getGridpoints()
+  #print "Point "+PointID+" ArrayList loaded"
+  points.set(0,str(PointID))
+
+  CoDir = int(self.getCoastDir())
+  points.set(5,Integer(CoDir))
+  if self.model.UseCoast == true:
+    CoDis = int(self.getCoastDist())
+  #points.set(2,Integer(int(CoDis)))
+  else:
+    CoDis = 100000
+  if CoDis < 1:
+    CoDis = 200000
+  elif CoDis <5000:
+    CoDis = 5000
+  points.set(6,Integer(int(CoDis)))
+  #print "CoDir = "+CoDir
+  #print "CoDis = "+CoDis
+  
+  RiDir = int(self.getRiverDir())
+  points.set(7,Integer(RiDir))
+  if self.model.UseRiver == true:
+    RiDis = int(self.getRiverDist())
+  else:
+    RiDis = 100000
+  if RiDis < 1:
+    RiDis = 200000
+  elif RiDis<5000:  
+    RiDis = 5000
+  points.set(8,Integer(int(RiDis))) 
+  #print "RiDir = "+RiDir
+  #print "RiDis = "+RiDis
+  
+  LaDir = int(self.getLakeDir())
+  points.set(9,Integer(LaDir)) 
+  if self.model.UseLake == true:
+    LaDis = int(self.getLakeDist())
+  else:
+    LaDis = 100000
+  if LaDis < 1:
+    LaDis = 200000
+  elif LaDis <5000:
+    LaDis = 5000
+  points.set(10,Integer(int(LaDis)))
+  #print "LaDir = "+LaDir
+  #print "LaDis = "+LaDis
+
+  if self.model.UseElev == true:
+    Elev = int(self.getElevation())
+  else:
+    Elev = 10000
+  points.set(3,Integer(Elev))
+  #print "Elev = "+Elev
+  
+  if self.model.UseDisturb == true:
+    Disturb = int(self.getHII_GRID())
+  else:
+    Disturb = 1
+  points.set(4, Integer(Disturb))
+  #print "Disturb = "+Disturb
+  
+  if self.model.UseHumanUse == true:
+    Use = int(self.getAnthro_Bio())
+  else:
+    Use = 1
+  if Use == 0:
+    Use = 1
+  #print "Use = "+Use
+  points.set(1, str(Use))
+
+  dstrb = double(1-(Disturb/64))
+  min1 = Math.min(RiDis,LaDis)
+  #print "min1 = "+min1
+  minT = double((Math.min(CoDis,min1))/10000)
+  #print "minT = "+minT
+  minWaterDis = double(1.0/minT)
+  #print "minWaterDis = "+minWaterDis
+  RelDistWaterWts = double((dstrb*self.DisturbanceWt)+(minWaterDis*self.WaterDisWt))/(self.model.DensityWeight+self.DisturbanceWt+self.WaterDisWt)
+  points.set(2, str(RelDistWaterWts))
+  #print "Weights = "+RelDistWaterWts
+  #trimPoints = ArrayList.trimToSize(points) #To reduce the hashmap size down to minimum ##
+  self.model.PtGridHM.put(str(PointID), ArrayList(points))
+]]>
+</RePastEvolver:action>
+
+  <RePastEvolver:action name="update" sigReadOnly="false" retType="void" imports="" paramNames="">
+<![CDATA[
+def update(int tc):
+  PointID = int(self.getPointID())
+  gridPt = self.model.PtGridHM.get(str(PointID))
+  gridList = ArrayList()
+  gridList = (ArrayList)gridPt
+  
+  lastChng = int(str(gridList.get(19)))
+  if lastChng+1 == tc:
+    newOccupancy = int(str(gridList.get(15)))
+    newDO = int(str(gridList.get(16)))
+    newMeanVir = double(str(gridList.get(17)))
+    newVirSD = double(str(gridList.get(18)))
+    gridList.set(11,Integer(newOccupancy))
+    gridList.set(12,Integer(newDO))
+    gridList.set(13,Double(newMeanVir))
+    gridList.set(14,Double(newVirSD))
+    self.model.PtGridHM.put(str(PointID), ArrayList(gridList))
+]]>
+</RePastEvolver:action>
+
+
+<RePastEvolver:parameter name="NumBirds" type="int" defaultValue="0" probe="false" accessible="true" />
+<RePastEvolver:parameter name="DiseasePrevalence" type="double" defaultValue="0.0" probe="false" accessible="true" />
+<RePastEvolver:parameter name="DiseaseVirulence" type="double" defaultValue="0.0" probe="false" accessible="true" />
+<RePastEvolver:parameter name="DisturbanceWt" type="double" defaultValue="0.5" probe="true" accessible="true" />
+<RePastEvolver:parameter name="WaterDisWt" type="double" defaultValue="0.5" probe="true" accessible="true" />
+
+
+</RePastEvolver:EvolverBean>
+
+
+</RePastEvolver:EvolverModel>
+</RePastEvolver:EvolverProject>
+</RePastEvolver:EvolverModelSpec>

@@ -1,0 +1,89 @@
+runs: 1
+migAlpha {
+  set: 6
+}
+
+migLambda {
+  set: 0.015
+}
+
+FreqMig {
+  set: 10
+}
+
+UseElev {
+  set_boolean: true
+}
+
+UseCoast {
+  set_boolean: true
+}
+
+UseRiver {
+  set_boolean: true
+}
+
+UseLake {
+  set_boolean: true
+}
+
+UseDisturb {
+  set_boolean: true
+}
+
+UseHumanUse {
+  set_boolean: true
+}
+
+MaxDist {
+  set: 1200
+}
+
+NormalSD {
+  set: 55
+}
+
+NormalMean {
+  set: 170
+}
+
+OptimDensity {
+  set: 1500
+}
+
+communicableDay {
+  set: 4
+}
+
+MaxVirulence {
+  set: 1.0
+}
+
+DensityWeight {
+  set: 2.0
+}
+
+DensWtSlope {
+  set: 2
+}
+
+VirChgMean {
+  set: 1
+}
+
+VirChgSD {
+  set: 0.1
+}
+
+initDiseasePrev {
+  set: 0.001
+}
+
+NghdSize {
+  set: 2
+}
+
+AttrProb {
+  set: -1
+}
+
